@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Objetivos</title>
+
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#4caf50">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <h1>📅 Calendario Anual de Objetivos</h1>
+
+    <h2>Selecciona Año</h2>
+    <div id="year-selector">
+    <button onclick="prevYear()">◀ Año</button>
+    <span id="year-label"></span>
+    <button onclick="nextYear()">Año ▶</button>
+    </div>
+
+    <h2>🎯 Resumen de Objetivos</h2>
+    <div id="goal-summary"></div>
+
+    <div id="calendar-year"></div>
+
+    <h2>Agregar Nuevo Objetivo</h2>
+    <input id="new-goal-title" placeholder="Nuevo objetivo…" />
+    <input type="color" id="new-goal-color" value="#4caf50">
+    <button onclick="addGoal()">Añadir</button>
+
+
+
+    <ul id="goals-list"></ul>
+
+    <script src="app.js"></script>
+</body>
+</html>

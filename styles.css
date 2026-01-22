@@ -1,0 +1,62 @@
+body {
+  font-family: system-ui, sans-serif;
+  margin: 20px;
+}
+
+#year-selector {
+  margin-bottom: 10px;
+}
+
+#goal-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.goal-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.goal-color-picker {
+  width: 24px;
+  height: 24px;
+  border: none;
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+.month-container {
+  border: 1px solid #ddd;
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.month-name {
+  text-align: center;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+#calendar-year .day {
+  border: 1px solid #ddd;
+  min-height: 50px;
+  padding: 2px;
+  cursor: pointer;
+}
+
+.weekday {
+  font-weight: bold;
+  text-align: center;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-top: 2px;
+  display: inline-block;
+}
