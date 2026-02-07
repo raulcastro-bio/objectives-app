@@ -92,7 +92,7 @@ function renderYearCalendar() {
 
     const monthName = document.createElement("div");
     monthName.className = "month-name";
-    monthName.textContent = new Date(currentYear, month).toLocaleDateString("es-ES", { month: "long", year: "numeric" });
+    monthName.textContent = new Date(currentYear, month).toLocaleDateString("es-ES", { month: "long"});
     monthDiv.appendChild(monthName);
 
     const calendar = document.createElement("div");
