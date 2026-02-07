@@ -16,6 +16,12 @@
 
     <h1>📅 Calendario Anual de Objetivos</h1>
 
+    <nav class="tabs">
+      <button class="tab active" onclick="switchTab('calendar')">📅 Calendario</button>
+      <button class="tab" onclick="switchTab('breakdown')">🧩 Desglose</button>
+    </nav>
+
+
     <button id="menu-btn" aria-label="Menu" onclick="toggleSidebar()">☰</button>
 
     <div id="sidebar" class="sidebar">
@@ -37,16 +43,24 @@
 
     <div id="overlay" class="overlay hidden" onclick="toggleSidebar()"></div>
 
+    <section id="tab-calendar" class="tab-content active">
+      <div id="year-selector">
+        <button onclick="prevYear()">◀</button>
+        <span id="year-label"></span>
+        <button onclick="nextYear()">▶</button>
+      </div>
 
-    <h2>Selecciona Año</h2>
-    <div id="year-selector">
-    <button onclick="prevYear()">◀</button>
-    <span id="year-label"></span>
-    <button onclick="nextYear()">▶</button>
-    </div>
+      <div id="calendar-year"></div>
+    </section>
 
-    <div id="calendar-year"></div>
 
-    <script src="app.js"></script>
+    <hr />
+
+    <section id="tab-breakdown" class="tab-content">
+      <h2>🧩 Desglose de objetivos</h2>
+      <div id="breakdown-list"></div>
+    </section>
+    
+  <script src="app.js"></script>
 </body>
 </html>

@@ -1,9 +1,22 @@
 let goals = JSON.parse(localStorage.getItem("goals")) || [];
 
 // Migración de datos
-goals = goals.map(g => ({ ...g, dates: g.dates || g.logs || [], color: g.color || "#4caf50" }));
+goals = goals.map(g => ({
+  ...g,
+  dates: g.dates || g.logs || [],
+  color: g.color || "#4caf50",
+  milestones: g.milestones || []
+}));
+
 
 let currentYear = new Date().getFullYear();
+
+let selectedBreakdownGoalId = null;
+
+function byId(id) {
+  return document.getElementById(id);
+}
+
 
 function save() { localStorage.setItem("goals", JSON.stringify(goals)); }
 function getColor(goal) { return goal.color; }
@@ -25,7 +38,24 @@ function renderDashboard() {
   document.getElementById("year-label").textContent = currentYear;
   renderGoalSummary();
   renderYearCalendar();
+  renderBreakdownAll();
 }
+
+/* ---------- TABS ----------*/
+function switchTab(tabName) {
+  // botones
+  document.querySelectorAll(".tab").forEach(btn =>
+    btn.classList.toggle("active", btn.textContent.toLowerCase().includes(tabName))
+  );
+
+  // contenidos
+  document.getElementById("tab-calendar").classList.toggle("active", tabName === "calendar");
+  document.getElementById("tab-breakdown").classList.toggle("active", tabName === "breakdown");
+
+  // UX: subir arriba al cambiar
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
 
 /* ---------- RESUMEN DE OBJETIVOS ---------- */
 function renderGoalSummary() {
@@ -223,6 +253,120 @@ function toggleSidebar() {
   const isOpen = sidebar.classList.toggle("open");
   overlay.classList.toggle("hidden", !isOpen);
 }
+
+/* ------------ DESGLOSE -------------*/
+function renderBreakdownAll() {
+  const container = document.getElementById("breakdown-list");
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  if (goals.length === 0) {
+    container.textContent = "No hay objetivos. Crea uno primero desde el menú.";
+    return;
+  }
+
+  goals.forEach(goal => {
+    const card = document.createElement("div");
+    card.className = "breakdown-goal";
+
+    // Header
+    const header = document.createElement("div");
+    header.className = "breakdown-goal-header";
+
+    const title = document.createElement("div");
+    title.className = "breakdown-goal-title";
+    title.textContent = goal.title;
+
+    header.appendChild(title);
+    card.appendChild(header);
+
+    // Add milestone row
+    const addRow = document.createElement("div");
+    addRow.className = "breakdown-add";
+
+    const input = document.createElement("input");
+    input.placeholder = 'Añadir hito… (p. ej. "A1", "Libro 1")';
+
+    const btn = document.createElement("button");
+    btn.textContent = "Añadir";
+    btn.onclick = () => {
+      const t = (input.value || "").trim();
+      if (!t) return;
+
+      goal.milestones = goal.milestones || [];
+      goal.milestones.push({ id: Date.now(), title: t, done: false });
+      input.value = "";
+      save();
+      renderBreakdownAll();
+    };
+
+    addRow.appendChild(input);
+    addRow.appendChild(btn);
+    card.appendChild(addRow);
+
+    // Milestone list
+    const ul = document.createElement("ul");
+    ul.className = "milestone-list";
+
+    (goal.milestones || []).forEach(m => {
+      const li = document.createElement("li");
+      li.className = "milestone-item";
+
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.checked = !!m.done;
+      checkbox.onchange = () => {
+        m.done = checkbox.checked;
+        save();
+        renderBreakdownAll();
+      };
+
+      const mTitle = document.createElement("div");
+      mTitle.className = "milestone-title" + (m.done ? " done" : "");
+      mTitle.textContent = m.title;
+
+      const actions = document.createElement("div");
+      actions.className = "milestone-actions";
+
+      const editBtn = document.createElement("button");
+      editBtn.textContent = "✏️";
+      editBtn.title = "Editar";
+      editBtn.onclick = () => {
+        const newTitle = prompt("Editar hito:", m.title);
+        if (newTitle && newTitle.trim()) {
+          m.title = newTitle.trim();
+          save();
+          renderBreakdownAll();
+        }
+      };
+
+      const delBtn = document.createElement("button");
+      delBtn.textContent = "🗑";
+      delBtn.title = "Eliminar";
+      delBtn.onclick = () => {
+        if (confirm(`¿Eliminar "${m.title}"?`)) {
+          goal.milestones = (goal.milestones || []).filter(x => x.id !== m.id);
+          save();
+          renderBreakdownAll();
+        }
+      };
+
+      actions.appendChild(editBtn);
+      actions.appendChild(delBtn);
+
+      li.appendChild(checkbox);
+      li.appendChild(mTitle);
+      li.appendChild(actions);
+
+      ul.appendChild(li);
+    });
+
+    card.appendChild(ul);
+    container.appendChild(card);
+  });
+}
+
 
 /* ---------- NAVEGACIÓN DE AÑOS ---------- */
 function prevYear() { currentYear--; renderDashboard(); }

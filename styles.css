@@ -4,7 +4,11 @@ body {
 }
 
 #year-selector {
-  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 10px 0 20px;
 }
 
 #goal-summary {
@@ -159,3 +163,154 @@ body {
   padding-top: 40px;
 }
 
+#breakdown {
+  margin-top: 20px;
+}
+
+.breakdown-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.breakdown-controls select {
+  min-width: 240px;
+  padding: 6px;
+}
+
+.breakdown-panel {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.breakdown-add {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.breakdown-add input {
+  flex: 1;
+  padding: 8px;
+}
+
+.milestone-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.milestone-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.milestone-item:last-child {
+  border-bottom: none;
+}
+
+.milestone-title.done {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.milestone-actions button {
+  margin-left: 6px;
+}
+
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin: 10px 0 15px;
+}
+
+.tab {
+  padding: 8px 14px;
+  border: 1px solid #ddd;
+  background: #f8f8f8;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.tab.active {
+  background: white;
+  border-bottom: 2px solid #000;
+}
+
+/* Tab content */
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+
+.breakdown-goal {
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.breakdown-goal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.breakdown-goal-title {
+  font-weight: 700;
+}
+
+.breakdown-add {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.breakdown-add input {
+  flex: 1;
+  padding: 8px;
+}
+
+.milestone-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.milestone-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.milestone-item:last-child {
+  border-bottom: none;
+}
+
+.milestone-title.done {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.milestone-actions button {
+  margin-left: 6px;
+}
