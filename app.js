@@ -1,13 +1,13 @@
 let goals = JSON.parse(localStorage.getItem("goals")) || [];
 
-// Migración de datos
-goals = goals.map(g => ({
-  ...g,
-  dates: g.dates || g.logs || [],
-  color: g.color || "#4caf50",
-  milestones: g.milestones || []
-}));
+// Migración + normalización de fechas
+goals = goals.map(g => {
+  const rawDates = (g.dates || g.logs || []).map(normalizeDateStr);
+  return { ...g, dates: rawDates, color: g.color || "#4caf50" };
+});
 
+// Guarda una vez tras migrar
+localStorage.setItem("goals", JSON.stringify(goals));
 
 let currentYear = new Date().getFullYear();
 
@@ -20,6 +20,18 @@ function byId(id) {
 
 function save() { localStorage.setItem("goals", JSON.stringify(goals)); }
 function getColor(goal) { return goal.color; }
+
+function toISODate(y, m, d) {
+  return `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+}
+
+function normalizeDateStr(s) {
+  // acepta "YYYY-M-D" o "YYYY-MM-DD" y lo convierte a "YYYY-MM-DD"
+  const m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(String(s).trim());
+  if (!m) return s;
+  return toISODate(Number(m[1]), Number(m[2]), Number(m[3]));
+}
+
 
 /* ---------- OBJETIVOS ---------- */
 function addGoal() {
@@ -145,34 +157,34 @@ function renderYearCalendar() {
     for (let i = 0; i < start; i++) calendar.appendChild(document.createElement("div"));
 
         for (let day = 1; day <= daysInMonth; day++) {
-      const dateStr = `${currentYear}-${month+1}-${day}`;
-      const dayDiv = document.createElement("div");
-      dayDiv.className = "day";
-      dayDiv.textContent = day;
+          const dateStr = toISODate(currentYear, month + 1, day);
+          const dayDiv = document.createElement("div");
+          dayDiv.className = "day";
+          dayDiv.textContent = day;
 
-      // ✅ Resaltar día actual
-      if (isCurrentYearToday && month === todayMonth && day === todayDay) {
-        dayDiv.classList.add("today");
-      }
+          // ✅ Resaltar día actual
+          if (isCurrentYearToday && month === todayMonth && day === todayDay) {
+            dayDiv.classList.add("today");
+          }
 
-      const markers = document.createElement("div");
-      markers.className = "markers";
+          const markers = document.createElement("div");
+          markers.className = "markers";
 
-      goals.forEach(g => {
-        if (g.dates.includes(dateStr)) {
-          const m = document.createElement("div");
-          m.className = "marker";
-          m.style.background = getColor(g);
-          markers.appendChild(m);
+          goals.forEach(g => {
+            if (g.dates.includes(dateStr)) {
+              const m = document.createElement("div");
+              m.className = "marker";
+              m.style.background = getColor(g);
+              markers.appendChild(m);
+            }
+          });
+
+          dayDiv.appendChild(markers);
+
+
+          dayDiv.onclick = () => toggleDay(dateStr);
+          calendar.appendChild(dayDiv);
         }
-      });
-
-      dayDiv.appendChild(markers);
-
-
-      dayDiv.onclick = () => toggleDay(dateStr);
-      calendar.appendChild(dayDiv);
-    }
 
     monthDiv.appendChild(calendar);
     container.appendChild(monthDiv);
