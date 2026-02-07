@@ -124,14 +124,20 @@ function renderYearCalendar() {
         dayDiv.classList.add("today");
       }
 
+      const markers = document.createElement("div");
+      markers.className = "markers";
+
       goals.forEach(g => {
         if (g.dates.includes(dateStr)) {
-          const dot = document.createElement("div");
-          dot.className = "dot";
-          dot.style.background = getColor(g);
-          dayDiv.appendChild(dot);
+          const m = document.createElement("div");
+          m.className = "marker";
+          m.style.background = getColor(g);
+          markers.appendChild(m);
         }
       });
+
+      dayDiv.appendChild(markers);
+
 
       dayDiv.onclick = () => toggleDay(dateStr);
       calendar.appendChild(dayDiv);

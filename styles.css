@@ -41,6 +41,22 @@ body {
   margin-bottom: 5px;
 }
 
+/* Contenedor de marcadores (barra) */
+.markers {
+  display: flex;
+  gap: 2px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+/* Segmento de marcador por objetivo */
+.marker {
+  height: 6px;
+  flex: 1 1 10px;
+  border-radius: 3px;
+}
+
+
 /* Resaltar el día actual */
 #calendar-year .day.today {
   border: 2px solid #000;
