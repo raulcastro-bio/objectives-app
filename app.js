@@ -88,6 +88,7 @@ function renderYearCalendar() {
   for (let month = 0; month < 12; month++) {
     const monthDiv = document.createElement("div");
     monthDiv.className = "month-container";
+    monthDiv.dataset.month = month;
 
     const monthName = document.createElement("div");
     monthName.className = "month-name";
@@ -146,6 +147,22 @@ function renderYearCalendar() {
     monthDiv.appendChild(calendar);
     container.appendChild(monthDiv);
   }
+
+  // Scroll automático al mes actual (solo si estamos en el año actual)
+  if (currentYear === today.getFullYear()) {
+    const currentMonth = today.getMonth();
+    const targetMonth = container.querySelector(
+      `.month-container[data-month="${currentMonth}"]`
+    );
+
+    if (targetMonth) {
+      targetMonth.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
+    }
+  }
+
 }
 
 /* ---------- SELECCIÓN DE OBJETIVOS ---------- */
