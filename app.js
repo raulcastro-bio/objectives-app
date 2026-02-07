@@ -1,4 +1,6 @@
 let goals = JSON.parse(localStorage.getItem("goals")) || [];
+let didAutoScrollThisYear = null;
+
 
 // Migración + normalización de fechas
 goals = goals.map(g => {
@@ -191,19 +193,15 @@ function renderYearCalendar() {
   }
 
   // Scroll automático al mes actual (solo si estamos en el año actual)
-  if (currentYear === today.getFullYear()) {
-    const currentMonth = today.getMonth();
-    const targetMonth = container.querySelector(
-      `.month-container[data-month="${currentMonth}"]`
-    );
+  if (currentYear === today.getFullYear() && didAutoScrollThisYear !== currentYear) {
+  const currentMonth = today.getMonth();
+  const targetMonth = container.querySelector(`.month-container[data-month="${currentMonth}"]`);
 
-    if (targetMonth) {
-      targetMonth.scrollIntoView({
-        behavior: "smooth",
-        block: "start"
-      });
-    }
+  if (targetMonth) {
+    targetMonth.scrollIntoView({ behavior: "smooth", block: "start" });
+    didAutoScrollThisYear = currentYear; // ✅ solo una vez
   }
+}
 
 }
 
@@ -381,8 +379,18 @@ function renderBreakdownAll() {
 
 
 /* ---------- NAVEGACIÓN DE AÑOS ---------- */
-function prevYear() { currentYear--; renderDashboard(); }
-function nextYear() { currentYear++; renderDashboard(); }
+function prevYear() { 
+  currentYear--; 
+  didAutoScrollThisYear = null;
+  renderDashboard(); 
+}
+
+function nextYear() { 
+  currentYear++; 
+  didAutoScrollThisYear = null;
+  renderDashboard(); 
+}
+
 
 /* ---------- INIT ---------- */
 renderDashboard();
