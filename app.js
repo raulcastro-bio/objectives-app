@@ -80,6 +80,11 @@ function renderYearCalendar() {
   const container = document.getElementById("calendar-year");
   container.innerHTML = "";
 
+  const today = new Date();
+  const isCurrentYearToday = (today.getFullYear() === currentYear);
+  const todayMonth = today.getMonth(); // 0-11
+  const todayDay = today.getDate();    // 1-31
+
   for (let month = 0; month < 12; month++) {
     const monthDiv = document.createElement("div");
     monthDiv.className = "month-container";
@@ -108,11 +113,16 @@ function renderYearCalendar() {
 
     for (let i = 0; i < start; i++) calendar.appendChild(document.createElement("div"));
 
-    for (let day = 1; day <= daysInMonth; day++) {
+        for (let day = 1; day <= daysInMonth; day++) {
       const dateStr = `${currentYear}-${month+1}-${day}`;
       const dayDiv = document.createElement("div");
       dayDiv.className = "day";
       dayDiv.textContent = day;
+
+      // ✅ Resaltar día actual
+      if (isCurrentYearToday && month === todayMonth && day === todayDay) {
+        dayDiv.classList.add("today");
+      }
 
       goals.forEach(g => {
         if (g.dates.includes(dateStr)) {

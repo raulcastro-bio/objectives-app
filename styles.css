@@ -41,6 +41,14 @@ body {
   margin-bottom: 5px;
 }
 
+/* Resaltar el día actual */
+#calendar-year .day.today {
+  border: 2px solid #000;
+  background: rgba(0, 0, 0, 0.06);
+  font-weight: 700;
+}
+
+
 #calendar-year .day {
   border: 1px solid #ddd;
   min-height: 50px;
