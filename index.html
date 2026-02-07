@@ -16,6 +16,28 @@
 
     <h1>📅 Calendario Anual de Objetivos</h1>
 
+    <button id="menu-btn" aria-label="Menu" onclick="toggleSidebar()">☰</button>
+
+    <div id="sidebar" class="sidebar">
+      <div class="sidebar-header">
+        <h2>🎯 Objetivos</h2>
+        <button class="close-btn" onclick="toggleSidebar()">✕</button>
+      </div>
+
+      <h3>Resumen</h3>
+      <div id="goal-summary"></div>
+
+      <h3>Agregar nuevo</h3>
+      <div class="sidebar-add">
+        <input id="new-goal-title" placeholder="Nuevo objetivo…" />
+        <input type="color" id="new-goal-color" value="#4caf50">
+        <button onclick="addGoal()">Añadir</button>
+      </div>
+    </div>
+
+    <div id="overlay" class="overlay hidden" onclick="toggleSidebar()"></div>
+
+
     <h2>Selecciona Año</h2>
     <div id="year-selector">
     <button onclick="prevYear()">◀</button>
@@ -23,19 +45,7 @@
     <button onclick="nextYear()">▶</button>
     </div>
 
-    <h2>🎯 Resumen de Objetivos</h2>
-    <div id="goal-summary"></div>
-
     <div id="calendar-year"></div>
-
-    <h2>Agregar Nuevo Objetivo</h2>
-    <input id="new-goal-title" placeholder="Nuevo objetivo…" />
-    <input type="color" id="new-goal-color" value="#4caf50">
-    <button onclick="addGoal()">Añadir</button>
-
-
-
-    <ul id="goals-list"></ul>
 
     <script src="app.js"></script>
 </body>

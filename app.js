@@ -216,6 +216,14 @@ function toggleDay(dateStr) {
   document.body.appendChild(modal);
 }
 
+/* ------------ SIDEBAR ------------*/
+function toggleSidebar() {
+  const sidebar = document.getElementById("sidebar");
+  const overlay = document.getElementById("overlay");
+  const isOpen = sidebar.classList.toggle("open");
+  overlay.classList.toggle("hidden", !isOpen);
+}
+
 /* ---------- NAVEGACIÓN DE AÑOS ---------- */
 function prevYear() { currentYear--; renderDashboard(); }
 function nextYear() { currentYear++; renderDashboard(); }
