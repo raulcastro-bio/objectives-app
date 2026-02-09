@@ -3,13 +3,16 @@ let didAutoScrollThisYear = null;
 
 
 // Migración + normalización de fechas
-goals = goals.map(g => {
-  const rawDates = (g.dates || g.logs || []).map(normalizeDateStr);
-  return { ...g, dates: rawDates, color: g.color || "#4caf50" };
-});
+goals = goals.map(g => ({
+  ...g,
+  dates: (g.dates || g.logs || []).map(normalizeDateStr),
+  color: g.color || "#4caf50",
+  milestones: g.milestones || [],
+  hoursByDate: g.hoursByDate || {}   // ✅ NUEVO
+}));
 
-// Guarda una vez tras migrar
 localStorage.setItem("goals", JSON.stringify(goals));
+
 
 let currentYear = new Date().getFullYear();
 
@@ -221,29 +224,84 @@ function toggleDay(dateStr) {
   container.innerHTML = `<h3>Marcar objetivos para ${dateStr}</h3>`;
 
   goals.forEach(g => {
-    const label = document.createElement("label");
-    label.style.display="block"; label.style.marginBottom="8px";
+    const row = document.createElement("div");
+    row.style.display = "grid";
+    row.style.gridTemplateColumns = "auto auto 1fr auto";
+    row.style.alignItems = "center";
+    row.style.gap = "8px";
+    row.style.marginBottom = "10px";
 
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
-    checkbox.checked = g.dates.includes(dateStr);
-    checkbox.onchange = () => {
-      const idx = g.dates.indexOf(dateStr);
-      if (checkbox.checked && idx===-1) g.dates.push(dateStr);
-      else if (!checkbox.checked && idx>=0) g.dates.splice(idx,1);
-      save();
-      renderDashboard();
-    };
+    checkbox.checked = (g.dates || []).includes(dateStr);
 
     const colorDot = document.createElement("span");
     colorDot.style = `
-      display:inline-block;width:12px;height:12px;
-      border-radius:50%;background:${getColor(g)};margin-right:6px;
+      display:inline-block;width:12px;height:12px;border-radius:50%;
+      background:${getColor(g)};
     `;
-    label.appendChild(checkbox);
-    label.appendChild(colorDot);
-    label.appendChild(document.createTextNode(g.title));
-    container.appendChild(label);
+
+    const title = document.createElement("span");
+    title.textContent = g.title;
+
+    // ✅ Input horas
+    const hoursInput = document.createElement("input");
+    hoursInput.type = "number";
+    hoursInput.min = "0";
+    hoursInput.step = "0.25";
+    hoursInput.placeholder = "h";
+    hoursInput.style.width = "70px";
+    hoursInput.value = (g.hoursByDate && g.hoursByDate[dateStr] != null) ? g.hoursByDate[dateStr] : "";
+    hoursInput.disabled = !checkbox.checked;
+
+    // Guardar horas al escribir (solo si está marcado)
+    hoursInput.oninput = () => {
+      if (!checkbox.checked) return;
+      const val = Number(hoursInput.value);
+      if (!g.hoursByDate) g.hoursByDate = {};
+      if (Number.isFinite(val) && val >= 0) {
+        g.hoursByDate[dateStr] = val;
+      } else {
+        delete g.hoursByDate[dateStr];
+      }
+      save();
+    };
+
+    // Toggle del objetivo para ese día
+    checkbox.onchange = () => {
+      const idx = (g.dates || []).indexOf(dateStr);
+
+      if (checkbox.checked) {
+        if (idx === -1) (g.dates || (g.dates = [])).push(dateStr);
+        hoursInput.disabled = false;
+
+        // Si no había horas, pon 1 por defecto (o déjalo vacío si prefieres)
+        if (!g.hoursByDate) g.hoursByDate = {};
+        if (g.hoursByDate[dateStr] == null) {
+          g.hoursByDate[dateStr] = 1;
+          hoursInput.value = "1";
+        }
+        hoursInput.focus();
+        hoursInput.select();
+      } else {
+        if (idx >= 0) g.dates.splice(idx, 1);
+        hoursInput.disabled = true;
+        hoursInput.value = "";
+
+        // Al desmarcar, borramos horas de ese día
+        if (g.hoursByDate) delete g.hoursByDate[dateStr];
+      }
+
+      save();
+      renderDashboard(); // o renderYearCalendar() si prefieres evitar repintar todo
+    };
+
+    row.appendChild(checkbox);
+    row.appendChild(colorDot);
+    row.appendChild(title);
+    row.appendChild(hoursInput);
+
+    container.appendChild(row);
   });
 
   const closeBtn = document.createElement("button");
