@@ -24,7 +24,7 @@ body {
   color: var(--text);
 }
 
-.hidden { display: none; }
+.hidden { display: none !important; }
 
 /* Headings */
 h1 {
@@ -152,7 +152,7 @@ input {
 .sidebar-add {
   display: grid;
   grid-template-columns: 1fr auto auto;
-  gap: 10px;
+  gap: 9px;
   align-items: center;
   margin-top: 8px;
 }
@@ -175,6 +175,7 @@ input {
   padding: 10px 0;
   border-bottom: 1px solid rgba(17, 24, 39, 0.06);
 }
+
 .goal-item:last-child { border-bottom: 0; }
 
 .goal-item button {
