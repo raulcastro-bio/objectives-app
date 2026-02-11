@@ -3,13 +3,32 @@ let didAutoScrollThisYear = null;
 
 
 // Migración + normalización de fechas
-goals = goals.map(g => ({
-  ...g,
-  dates: (g.dates || g.logs || []).map(normalizeDateStr),
-  color: g.color || "#4caf50",
-  milestones: g.milestones || [],
-  hoursByDate: g.hoursByDate || {}   // ✅ NUEVO
-}));
+goals = goals.map(g => {
+  const dates = (g.dates || g.logs || []).map(normalizeDateStr);
+
+  // Convertir hoursByDate -> minutesByDate si existe
+  const minutesByDate = g.minutesByDate || {};
+  if (g.hoursByDate && typeof g.hoursByDate === "object") {
+    for (const [k, v] of Object.entries(g.hoursByDate)) {
+      const key = normalizeDateStr(k);
+      const hours = Number(v);
+      if (Number.isFinite(hours) && hours >= 0) {
+        minutesByDate[key] = Math.round(hours * 60);
+      }
+    }
+  }
+
+  return {
+    ...g,
+    dates,
+    color: g.color || "#4caf50",
+    milestones: g.milestones || [],
+    minutesByDate
+  };
+});
+
+// (opcional) elimina hoursByDate para no mantener dos fuentes
+goals.forEach(g => { delete g.hoursByDate; });
 
 localStorage.setItem("goals", JSON.stringify(goals));
 
@@ -226,10 +245,19 @@ function toggleDay(dateStr) {
   goals.forEach(g => {
     const row = document.createElement("div");
     row.style.display = "grid";
-    row.style.gridTemplateColumns = "auto auto 1fr auto";
+    row.style.gridTemplateColumns = "auto auto 1fr auto"; // ✅ la última columna es el timeWrap (un solo bloque)
     row.style.alignItems = "center";
-    row.style.gap = "8px";
+    row.style.gap = "10px";
     row.style.marginBottom = "10px";
+
+    // Evita que el texto empuje al tiempo a otra línea
+    const title = document.createElement("span");
+    title.textContent = g.title;
+    title.style.minWidth = "0";
+    title.style.overflow = "hidden";
+    title.style.textOverflow = "ellipsis";
+    title.style.whiteSpace = "nowrap";
+
 
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
@@ -241,56 +269,108 @@ function toggleDay(dateStr) {
       background:${getColor(g)};
     `;
 
-    const title = document.createElement("span");
-    title.textContent = g.title;
+   // --- valores actuales ---
+    const totalMin = (g.minutesByDate && g.minutesByDate[dateStr] != null) ? g.minutesByDate[dateStr] : null;
+    const hm = totalMin == null ? { h: "", m: "" } : minutesToHM(totalMin);
 
-    // ✅ Input horas
+    // contenedor conjunto hh:mm
+    const timeWrap = document.createElement("div");
+    timeWrap.className = "time-input";
+
+    // input horas
     const hoursInput = document.createElement("input");
     hoursInput.type = "number";
     hoursInput.min = "0";
-    hoursInput.step = "0.25";
+    hoursInput.step = "1";
     hoursInput.placeholder = "h";
-    hoursInput.style.width = "70px";
-    hoursInput.value = (g.hoursByDate && g.hoursByDate[dateStr] != null) ? g.hoursByDate[dateStr] : "";
-    hoursInput.disabled = !checkbox.checked;
+    hoursInput.value = hm.h === "" ? "" : String(hm.h);
 
-    // Guardar horas al escribir (solo si está marcado)
-    hoursInput.oninput = () => {
+    // separador :
+    const sep = document.createElement("span");
+    sep.className = "time-sep";
+    sep.textContent = ":";
+
+    // input minutos
+    const minutesInput = document.createElement("input");
+    minutesInput.type = "number";
+    minutesInput.min = "0";
+    minutesInput.max = "59";
+    minutesInput.step = "1";
+    minutesInput.placeholder = "min";
+    minutesInput.value = hm.m === "" ? "" : String(hm.m);
+
+    // habilitar/deshabilitar según checkbox
+    const setEnabled = (enabled) => {
+      hoursInput.disabled = !enabled;
+      minutesInput.disabled = !enabled;
+      timeWrap.classList.toggle("disabled", !enabled);
+    };
+
+    setEnabled(checkbox.checked);
+
+    // normalizar minutos a 0..59 y guardar
+    const persistTime = () => {
       if (!checkbox.checked) return;
-      const val = Number(hoursInput.value);
-      if (!g.hoursByDate) g.hoursByDate = {};
-      if (Number.isFinite(val) && val >= 0) {
-        g.hoursByDate[dateStr] = val;
-      } else {
-        delete g.hoursByDate[dateStr];
+
+      const h = hoursInput.value === "" ? 0 : Number(hoursInput.value);
+      let m = minutesInput.value === "" ? 0 : Number(minutesInput.value);
+
+      if (!Number.isFinite(m) || m < 0) m = 0;
+      if (m >= 60) {
+        const extraH = Math.floor(m / 60);
+        m = m % 60;
+        const currentH = hoursInput.value === "" ? 0 : Number(hoursInput.value);
+        hoursInput.value = String(currentH + extraH);
+        minutesInput.value = String(m);
       }
+
+      // si el usuario escribe 7, que quede "07" visualmente (opcional)
+      // minutesInput.value = String(m).padStart(2, "0");
+
+      if (!g.minutesByDate) g.minutesByDate = {};
+      const total = hmToMinutes(h, m);
+
+      if (total === 0) {
+        delete g.minutesByDate[dateStr];
+      } else {
+        g.minutesByDate[dateStr] = total;
+      }
+
       save();
     };
+
+    hoursInput.oninput = persistTime;
+    minutesInput.oninput = persistTime;
+
+    // montar el conjunto
+    timeWrap.appendChild(hoursInput);
+    timeWrap.appendChild(sep);
+    timeWrap.appendChild(minutesInput);
+
 
     // Toggle del objetivo para ese día
     checkbox.onchange = () => {
       const idx = (g.dates || []).indexOf(dateStr);
 
       if (checkbox.checked) {
-        if (idx === -1) (g.dates || (g.dates = [])).push(dateStr);
-        hoursInput.disabled = false;
+        setEnabled(true);
 
-        // Si no había horas, pon 1 por defecto (o déjalo vacío si prefieres)
-        if (!g.hoursByDate) g.hoursByDate = {};
-        if (g.hoursByDate[dateStr] == null) {
-          g.hoursByDate[dateStr] = 1;
-          hoursInput.value = "1";
+        // Si no hay tiempo aún, deja vacío (o pon 0:00)
+        if (!g.minutesByDate) g.minutesByDate = {};
+        if (g.minutesByDate[dateStr] == null) {
+          // no asignamos nada por defecto -> queda vacío
         }
-        hoursInput.focus();
-        hoursInput.select();
-      } else {
-        if (idx >= 0) g.dates.splice(idx, 1);
-        hoursInput.disabled = true;
-        hoursInput.value = "";
 
-        // Al desmarcar, borramos horas de ese día
-        if (g.hoursByDate) delete g.hoursByDate[dateStr];
+        hoursInput.focus();
+      } else {
+        setEnabled(false);
+        hoursInput.value = "";
+        minutesInput.value = "";
+
+        if (g.minutesByDate) delete g.minutesByDate[dateStr];
       }
+
+
 
       save();
       renderDashboard(); // o renderYearCalendar() si prefieres evitar repintar todo
@@ -299,7 +379,9 @@ function toggleDay(dateStr) {
     row.appendChild(checkbox);
     row.appendChild(colorDot);
     row.appendChild(title);
-    row.appendChild(hoursInput);
+    row.appendChild(timeWrap);
+
+
 
     container.appendChild(row);
   });
@@ -312,6 +394,22 @@ function toggleDay(dateStr) {
   container.appendChild(closeBtn);
   modal.appendChild(container);
   document.body.appendChild(modal);
+}
+
+function minutesToHM(total) {
+  const t = Number(total);
+  if (!Number.isFinite(t) || t < 0) return { h: 0, m: 0 };
+  const h = Math.floor(t / 60);
+  const m = t % 60;
+  return { h, m };
+}
+
+function hmToMinutes(h, m) {
+  const hh = Number(h);
+  const mm = Number(m);
+  if (!Number.isFinite(hh) || hh < 0) return 0;
+  if (!Number.isFinite(mm) || mm < 0) return 0;
+  return Math.round(hh * 60 + mm);
 }
 
 /* ------------ SIDEBAR ------------*/

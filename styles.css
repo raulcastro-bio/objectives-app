@@ -363,6 +363,41 @@ body { padding-top: 54px; }
   border-radius: 12px;
 }
 
+/* ---------------- TIME ---------------*/
+
+.time-input {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: nowrap;      /* ✅ no saltes de línea */
+  white-space: nowrap;    /* ✅ no rompas */
+  padding: 6px 8px;
+  border: 1px solid rgba(17,24,39,0.10);
+  border-radius: 12px;
+  background: rgba(255,255,255,0.9);
+}
+
+.time-input input {
+  width: 46px !important; /* ✅ evita que herede width:100% */
+  min-height: 32px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(17,24,39,0.10);
+  text-align: center;
+}
+
+
+.time-sep {
+  font-weight: 800;
+  opacity: 0.6;
+  user-select: none;
+}
+
+.time-input.disabled {
+  opacity: 0.5;
+}
+
+
 /* ------------------- Modal ------------------- */
 @media (prefers-reduced-motion: no-preference) {
   .sidebar, button, #calendar-year .day { scroll-behavior: smooth; }
