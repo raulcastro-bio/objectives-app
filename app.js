@@ -120,22 +120,16 @@ function renderGoalSummary() {
     const label = document.createElement("span");
     label.textContent = `${g.title}: ${count} días (${perc}%)`;
 
-    // Botón eliminar
-    const delBtn = document.createElement("button");
-    delBtn.textContent = "🗑";
-    delBtn.style.marginLeft = "6px";
-    delBtn.title = "Eliminar objetivo";
-    delBtn.onclick = () => {
-      if (confirm(`¿Eliminar el objetivo "${g.title}"?`)) {
-        goals = goals.filter(goal => goal.id !== g.id);
-        save();
-        renderDashboard();
-      }
-    };
+    // Botón información
+    const infoBtn = document.createElement("button");
+    infoBtn.textContent = "ⓘ";
+    infoBtn.title = "Ver resumen de horas";
+    infoBtn.onclick = () => showGoalInfo(g);
+
 
     div.appendChild(colorInput);
     div.appendChild(label);
-    div.appendChild(delBtn);
+    div.appendChild(infoBtn);
     container.appendChild(div);
   });
 }
@@ -419,6 +413,88 @@ function toggleSidebar() {
   const isOpen = sidebar.classList.toggle("open");
   overlay.classList.toggle("hidden", !isOpen);
 }
+
+function formatMinutes(mins) {
+  const t = Number(mins) || 0;
+  const h = Math.floor(t / 60);
+  const m = t % 60;
+  if (h <= 0) return `${m} min`;
+  if (m === 0) return `${h} h`;
+  return `${h} h ${m} min`;
+}
+
+function sumMinutesForYear(goal, year) {
+  const map = goal.minutesByDate || {};
+  let total = 0;
+  for (const [dateStr, mins] of Object.entries(map)) {
+    if (String(dateStr).startsWith(String(year))) {
+      const v = Number(mins);
+      if (Number.isFinite(v) && v > 0) total += v;
+    }
+  }
+  return total;
+}
+
+function showGoalInfo(goal) {
+  const days = (goal.dates || []).filter(d => String(d).startsWith(String(currentYear))).length;
+  const totalMinutes = sumMinutesForYear(goal, currentYear);
+  const avg = days > 0 ? Math.round(totalMinutes / days) : 0;
+
+  const modal = document.createElement("div");
+  modal.style = `
+    position:fixed; inset:0; background:rgba(0,0,0,0.35);
+    display:flex; align-items:center; justify-content:center; z-index:5000;
+    padding:16px;
+  `;
+
+  const card = document.createElement("div");
+  card.style = `
+    background:white; width:min(420px, 92vw);
+    border-radius:16px; padding:16px;
+    box-shadow: 0 18px 50px rgba(0,0,0,0.18);
+  `;
+
+  card.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+      <div style="font-weight:800;font-size:16px;">${goal.title}</div>
+      <button id="close-info" style="width:38px;height:38px;border-radius:12px;">✕</button>
+    </div>
+
+    <div style="margin-top:12px;display:grid;gap:8px;">
+      <div><strong>Días marcados (${currentYear}):</strong> ${days}</div>
+      <div><strong>Tiempo total (${currentYear}):</strong> ${formatMinutes(totalMinutes)}</div>
+      <div><strong>Media por día:</strong> ${formatMinutes(avg)}</div>
+    </div>
+
+    <div style="margin-top:16px;display:flex;gap:10px;justify-content:flex-end;">
+      <button id="delete-goal"
+        style="
+          color:#FF3B30; background:transparent; border:0;
+        ">
+        Eliminar objetivo
+      </button>
+    </div>
+  `;
+
+  modal.appendChild(card);
+  document.body.appendChild(modal);
+
+  const close = () => document.body.removeChild(modal);
+
+  card.querySelector("#close-info").onclick = close;
+  modal.onclick = (e) => { if (e.target === modal) close(); };
+
+  // eliminar dentro del panel info
+  card.querySelector("#delete-goal").onclick = () => {
+    if (confirm(`¿Eliminar el objetivo "${goal.title}"?`)) {
+      goals = goals.filter(g => g.id !== goal.id);
+      save();
+      renderDashboard();
+      close();
+    }
+  };
+}
+
 
 /* ------------ DESGLOSE -------------*/
 function renderBreakdownAll() {
