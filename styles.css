@@ -15,13 +15,16 @@
 /* Base */
 * { box-sizing: border-box; }
 html, body { height: 100%; }
+
 body {
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
   margin: 0;
-  padding: 18px 16px 30px;
+  padding: 54px 16px 30px; /* espacio para botón menú */
   background: var(--bg);
   color: var(--text);
 }
+
+.hidden { display: none; }
 
 /* Headings */
 h1 {
@@ -42,15 +45,7 @@ h3 {
   letter-spacing: 0.08em;
 }
 
-/* Horizontal rule */
-hr {
-  border: 0;
-  height: 1px;
-  background: var(--border);
-  margin: 18px 0;
-}
-
-/* ----------- Buttons + inputs ---------- */
+/* Buttons + inputs */
 button {
   border: 1px solid var(--border);
   background: var(--card);
@@ -61,18 +56,14 @@ button {
   box-shadow: 0 1px 0 rgba(17,24,39,0.02);
   transition: transform 0.08s ease, box-shadow 0.12s ease, background 0.12s ease;
 }
-button:hover {
-  box-shadow: 0 10px 20px rgba(17, 24, 39, 0.06);
-}
-button:active {
-  transform: scale(0.98);
-}
-button:focus-visible, input:focus-visible, select:focus-visible {
+button:hover { box-shadow: 0 10px 20px rgba(17, 24, 39, 0.06); }
+button:active { transform: scale(0.98); }
+button:focus-visible, input:focus-visible {
   outline: 2px solid rgba(76, 175, 80, 0.35);
   outline-offset: 2px;
 }
 
-input, select {
+input {
   border: 1px solid var(--border);
   background: var(--card);
   color: var(--text);
@@ -93,7 +84,7 @@ input, select {
   cursor: pointer;
 }
 
-/* ------------------- Menu button -------------- */
+/* Menu button */
 #menu-btn {
   position: fixed;
   top: 14px;
@@ -108,28 +99,38 @@ input, select {
   backdrop-filter: blur(8px);
 }
 
-/* Create some room for menu on top */
-body { padding-top: 54px; }
-
-/* ------------------- Sidebar polished ------------------- */
+/* Sidebar */
 .sidebar {
   position: fixed;
-  top: 0;
-  left: 0;
+  top: 0; left: 0;
   width: 340px;
   max-width: 88vw;
   height: 100vh;
-  background: rgba(255,255,255,0.92);
-  backdrop-filter: blur(14px);
-  border-right: 1px solid var(--border);
-  box-shadow: var(--shadow);
-  transform: translateX(-100%);
-  transition: transform 200ms ease;
+  background: white;
   z-index: 3000;
   padding: 16px;
-  overflow-y: auto;
+  overflow: hidden;
+
+  display: flex;
+  flex-direction: column;
+
+  transform: translateX(-100%);
+  transition: transform 200ms ease;
+  box-shadow: var(--shadow);
 }
 .sidebar.open { transform: translateX(0); }
+
+.sidebar-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.sidebar-bottom {
+  margin-top: auto;
+  padding-top: 16px;
+}
 
 .sidebar-header {
   display: flex;
@@ -163,7 +164,6 @@ body { padding-top: 54px; }
   background: rgba(17,24,39,0.35);
   z-index: 2500;
 }
-.hidden { display: none; }
 
 /* Sidebar goal rows */
 #goal-summary { margin-top: 8px; }
@@ -176,7 +176,7 @@ body { padding-top: 54px; }
   border-bottom: 1px solid rgba(17, 24, 39, 0.06);
 }
 .goal-item:last-child { border-bottom: 0; }
-.goal-item span { color: var(--text); }
+
 .goal-item button {
   width: 38px;
   height: 38px;
@@ -184,7 +184,13 @@ body { padding-top: 54px; }
   border-radius: 12px;
 }
 
-/* ------------------- Tabs (app-like) ------------------- */
+.settings-btn {
+  width: 100%;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+/* Tabs */
 .tabs {
   display: inline-flex;
   gap: 6px;
@@ -211,11 +217,10 @@ body { padding-top: 54px; }
   border: 1px solid rgba(17, 24, 39, 0.06);
 }
 
-/* Tab content */
 .tab-content { display: none; }
 .tab-content.active { display: block; }
 
-/* ------------------- Year selector centered ------------------- */
+/* Year selector */
 #year-selector {
   display: flex;
   align-items: center;
@@ -230,7 +235,7 @@ body { padding-top: 54px; }
   letter-spacing: -0.02em;
 }
 
-/* ------------------- Calendar cards (professional) ------------------- */
+/* Calendar cards */
 .month-container {
   background: var(--card);
   border: 1px solid var(--border);
@@ -239,14 +244,12 @@ body { padding-top: 54px; }
   margin-bottom: 14px;
   box-shadow: var(--shadow-sm);
 }
-
 .month-name {
   text-align: center;
   font-weight: 800;
   margin-bottom: 8px;
   letter-spacing: -0.02em;
 }
-
 .weekday {
   font-weight: 700;
   text-align: center;
@@ -254,8 +257,6 @@ body { padding-top: 54px; }
   font-size: 12px;
   padding: 4px 0 6px;
 }
-
-/* Day cell */
 #calendar-year .day {
   border: 1px solid rgba(17, 24, 39, 0.08);
   border-radius: 12px;
@@ -269,21 +270,16 @@ body { padding-top: 54px; }
   align-items: center;
   justify-content: flex-start;
 }
-#calendar-year .day:hover {
-  box-shadow: 0 10px 18px rgba(17, 24, 39, 0.06);
-}
-#calendar-year .day:active {
-  transform: scale(0.98);
-}
+#calendar-year .day:hover { box-shadow: 0 10px 18px rgba(17, 24, 39, 0.06); }
+#calendar-year .day:active { transform: scale(0.98); }
 
-/* Today highlight (previous style, but nicer) */
 #calendar-year .day.today {
   border: 2px solid rgba(17, 24, 39, 0.75);
   background: rgba(17, 24, 39, 0.05);
   font-weight: 800;
 }
 
-/* Markers dentro del día */
+/* Markers */
 .markers {
   display: flex;
   gap: 2px;
@@ -292,19 +288,14 @@ body { padding-top: 54px; }
   justify-content: center;
   flex-wrap: wrap;
 }
-
 .marker {
   width: 10px;
   height: 6px;
   border-radius: 3px;
 }
 
-
-/* ------------------- Breakdown ------------------- */
-#breakdown-list {
-  display: grid;
-  gap: 12px;
-}
+/* Breakdown */
+#breakdown-list { display: grid; gap: 12px; }
 
 .breakdown-goal {
   background: var(--card);
@@ -312,14 +303,6 @@ body { padding-top: 54px; }
   border-radius: var(--radius);
   padding: 12px;
   box-shadow: var(--shadow-sm);
-}
-
-.breakdown-goal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 10px;
 }
 
 .breakdown-goal-title {
@@ -330,17 +313,11 @@ body { padding-top: 54px; }
 .breakdown-add {
   display: flex;
   gap: 10px;
-  margin-bottom: 10px;
+  margin: 10px 0;
 }
-
 .breakdown-add input { flex: 1; }
 
-.milestone-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
+.milestone-list { list-style: none; padding: 0; margin: 0; }
 .milestone-item {
   display: grid;
   grid-template-columns: auto 1fr auto;
@@ -351,10 +328,7 @@ body { padding-top: 54px; }
 }
 .milestone-item:last-child { border-bottom: 0; }
 
-.milestone-title.done {
-  text-decoration: line-through;
-  opacity: 0.55;
-}
+.milestone-title.done { text-decoration: line-through; opacity: 0.55; }
 
 .milestone-actions button {
   width: 38px;
@@ -363,45 +337,28 @@ body { padding-top: 54px; }
   border-radius: 12px;
 }
 
-/* ---------------- TIME ---------------*/
-
+/* Time input inside day modal */
 .time-input {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  flex-wrap: nowrap;      /* ✅ no saltes de línea */
-  white-space: nowrap;    /* ✅ no rompas */
+  flex-wrap: nowrap;
+  white-space: nowrap;
   padding: 6px 8px;
   border: 1px solid rgba(17,24,39,0.10);
   border-radius: 12px;
   background: rgba(255,255,255,0.9);
 }
-
 .time-input input {
-  width: 46px !important; /* ✅ evita que herede width:100% */
+  width: 46px !important;
   min-height: 32px;
   padding: 6px 8px;
   border-radius: 10px;
   border: 1px solid rgba(17,24,39,0.10);
   text-align: center;
 }
-
-
-.time-sep {
-  font-weight: 800;
-  opacity: 0.6;
-  user-select: none;
-}
-
-.time-input.disabled {
-  opacity: 0.5;
-}
-
-
-/* ------------------- Modal ------------------- */
-@media (prefers-reduced-motion: no-preference) {
-  .sidebar, button, #calendar-year .day { scroll-behavior: smooth; }
-}
+.time-sep { font-weight: 800; opacity: 0.6; user-select: none; }
+.time-input.disabled { opacity: 0.5; }
 
 /* Mobile tweaks */
 @media (max-width: 480px) {

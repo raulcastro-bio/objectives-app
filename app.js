@@ -1,12 +1,60 @@
 let goals = JSON.parse(localStorage.getItem("goals")) || [];
 let didAutoScrollThisYear = null;
+let currentYear = new Date().getFullYear();
 
+/* ---------- Helpers fecha ---------- */
+function toISODate(y, m, d) {
+  return `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+}
+function normalizeDateStr(s) {
+  const m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(String(s).trim());
+  if (!m) return String(s);
+  return toISODate(Number(m[1]), Number(m[2]), Number(m[3]));
+}
 
-// Migración + normalización de fechas
+/* ---------- Helpers tiempo ---------- */
+function minutesToHM(total) {
+  const t = Number(total);
+  if (!Number.isFinite(t) || t < 0) return { h: 0, m: 0 };
+  return { h: Math.floor(t / 60), m: t % 60 };
+}
+function hmToMinutes(h, m) {
+  const hh = Number(h);
+  const mm = Number(m);
+  if (!Number.isFinite(hh) || hh < 0) return 0;
+  if (!Number.isFinite(mm) || mm < 0) return 0;
+  return Math.round(hh * 60 + mm);
+}
+function formatMinutes(mins) {
+  const t = Number(mins) || 0;
+  const h = Math.floor(t / 60);
+  const m = t % 60;
+  if (h <= 0) return `${m} min`;
+  if (m === 0) return `${h} h`;
+  return `${h} h ${m} min`;
+}
+function sumMinutesForYear(goal, year) {
+  const map = goal.minutesByDate || {};
+  let total = 0;
+  for (const [dateStr, mins] of Object.entries(map)) {
+    if (String(dateStr).startsWith(String(year))) {
+      const v = Number(mins);
+      if (Number.isFinite(v) && v > 0) total += v;
+    }
+  }
+  return total;
+}
+
+/* ---------- Persistencia ---------- */
+function save() {
+  localStorage.setItem("goals", JSON.stringify(goals));
+}
+function getColor(goal) { return goal.color; }
+
+/* ---------- Migración ---------- */
 goals = goals.map(g => {
   const dates = (g.dates || g.logs || []).map(normalizeDateStr);
 
-  // Convertir hoursByDate -> minutesByDate si existe
   const minutesByDate = g.minutesByDate || {};
   if (g.hoursByDate && typeof g.hoursByDate === "object") {
     for (const [k, v] of Object.entries(g.hoursByDate)) {
@@ -26,50 +74,74 @@ goals = goals.map(g => {
     minutesByDate
   };
 });
-
-// (opcional) elimina hoursByDate para no mantener dos fuentes
 goals.forEach(g => { delete g.hoursByDate; });
+save();
 
-localStorage.setItem("goals", JSON.stringify(goals));
-
-
-let currentYear = new Date().getFullYear();
-
-let selectedBreakdownGoalId = null;
-
-function byId(id) {
-  return document.getElementById(id);
+/* ---------- Tabs ---------- */
+function switchTab(tabName) {
+  document.querySelectorAll(".tab").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.tab === tabName);
+  });
+  document.getElementById("tab-calendar").classList.toggle("active", tabName === "calendar");
+  document.getElementById("tab-breakdown").classList.toggle("active", tabName === "breakdown");
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-
-function save() { localStorage.setItem("goals", JSON.stringify(goals)); }
-function getColor(goal) { return goal.color; }
-
-function toISODate(y, m, d) {
-  return `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+/* ---------- Sidebar ---------- */
+function showMainSidebarView() {
+  const main = document.getElementById("sidebar-main");
+  const settings = document.getElementById("sidebar-settings");
+  if (main && settings) {
+    settings.classList.add("hidden");
+    main.classList.remove("hidden");
+  }
 }
 
-function normalizeDateStr(s) {
-  // acepta "YYYY-M-D" o "YYYY-MM-DD" y lo convierte a "YYYY-MM-DD"
-  const m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(String(s).trim());
-  if (!m) return s;
-  return toISODate(Number(m[1]), Number(m[2]), Number(m[3]));
+function toggleSidebar() {
+  const sidebar = document.getElementById("sidebar");
+  const overlay = document.getElementById("overlay");
+
+  const isOpen = sidebar.classList.toggle("open");
+  overlay.classList.toggle("hidden", !isOpen);
+
+  // al cerrar, vuelve a la vista principal
+  if (!isOpen) showMainSidebarView();
 }
 
+function openSettings() {
+  const main = document.getElementById("sidebar-main");
+  const settings = document.getElementById("sidebar-settings");
+  if (!main || !settings) return;
+  main.classList.add("hidden");
+  settings.classList.remove("hidden");
+}
 
-/* ---------- OBJETIVOS ---------- */
+function closeSettings() {
+  showMainSidebarView();
+}
+
+/* ---------- Objetivos ---------- */
 function addGoal() {
   const titleInput = document.getElementById("new-goal-title");
   const colorInput = document.getElementById("new-goal-color");
-  if (!titleInput.value) return;
+  const title = (titleInput.value || "").trim();
+  if (!title) return;
 
-  goals.push({ id: Date.now(), title: titleInput.value, dates: [], color: colorInput.value });
+  goals.push({
+    id: Date.now(),
+    title,
+    dates: [],
+    color: colorInput.value || "#4caf50",
+    milestones: [],
+    minutesByDate: {}
+  });
+
   titleInput.value = "";
   save();
   renderDashboard();
 }
 
-/* ---------- DASHBOARD ---------- */
+/* ---------- Dashboard ---------- */
 function renderDashboard() {
   document.getElementById("year-label").textContent = currentYear;
   renderGoalSummary();
@@ -77,33 +149,16 @@ function renderDashboard() {
   renderBreakdownAll();
 }
 
-/* ---------- TABS ----------*/
-function switchTab(tabName) {
-  // botones
-  document.querySelectorAll(".tab").forEach(btn =>
-    btn.classList.toggle("active", btn.textContent.toLowerCase().includes(tabName))
-  );
-
-  // contenidos
-  document.getElementById("tab-calendar").classList.toggle("active", tabName === "calendar");
-  document.getElementById("tab-breakdown").classList.toggle("active", tabName === "breakdown");
-
-  // UX: subir arriba al cambiar
-  window.scrollTo({ top: 0, behavior: "smooth" });
-}
-
-
-/* ---------- RESUMEN DE OBJETIVOS ---------- */
+/* ---------- Resumen objetivos (sidebar) ---------- */
 function renderGoalSummary() {
   const container = document.getElementById("goal-summary");
   container.innerHTML = "";
 
-  const totalDays = 365; // aproximación
+  const totalDays = 365;
   goals.forEach(g => {
     const div = document.createElement("div");
     div.className = "goal-item";
 
-    // Selector de color
     const colorInput = document.createElement("input");
     colorInput.type = "color";
     colorInput.value = g.color;
@@ -114,18 +169,16 @@ function renderGoalSummary() {
       renderDashboard();
     };
 
-    // Label con días y porcentaje
-    const count = g.dates.filter(d => d.startsWith(currentYear)).length;
+    const count = (g.dates || []).filter(d => String(d).startsWith(String(currentYear))).length;
     const perc = Math.round((count / totalDays) * 100);
+
     const label = document.createElement("span");
     label.textContent = `${g.title}: ${count} días (${perc}%)`;
 
-    // Botón información
     const infoBtn = document.createElement("button");
     infoBtn.textContent = "ⓘ";
-    infoBtn.title = "Ver resumen de horas";
+    infoBtn.title = "Ver detalles";
     infoBtn.onclick = () => showGoalInfo(g);
-
 
     div.appendChild(colorInput);
     div.appendChild(label);
@@ -134,16 +187,15 @@ function renderGoalSummary() {
   });
 }
 
-
-/* ---------- CALENDARIO ANUAL ---------- */
+/* ---------- Calendario anual ---------- */
 function renderYearCalendar() {
   const container = document.getElementById("calendar-year");
   container.innerHTML = "";
 
   const today = new Date();
   const isCurrentYearToday = (today.getFullYear() === currentYear);
-  const todayMonth = today.getMonth(); // 0-11
-  const todayDay = today.getDate();    // 1-31
+  const todayMonth = today.getMonth();
+  const todayDay = today.getDate();
 
   for (let month = 0; month < 12; month++) {
     const monthDiv = document.createElement("div");
@@ -152,7 +204,7 @@ function renderYearCalendar() {
 
     const monthName = document.createElement("div");
     monthName.className = "month-name";
-    monthName.textContent = new Date(currentYear, month).toLocaleDateString("es-ES", { month: "long"});
+    monthName.textContent = new Date(currentYear, month).toLocaleDateString("es-ES", { month: "long" });
     monthDiv.appendChild(monthName);
 
     const calendar = document.createElement("div");
@@ -174,84 +226,76 @@ function renderYearCalendar() {
 
     for (let i = 0; i < start; i++) calendar.appendChild(document.createElement("div"));
 
-        for (let day = 1; day <= daysInMonth; day++) {
-          const dateStr = toISODate(currentYear, month + 1, day);
-          const dayDiv = document.createElement("div");
-          dayDiv.className = "day";
-          dayDiv.textContent = day;
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = toISODate(currentYear, month + 1, day);
 
-          // ✅ Resaltar día actual
-          if (isCurrentYearToday && month === todayMonth && day === todayDay) {
-            dayDiv.classList.add("today");
-          }
+      const dayDiv = document.createElement("div");
+      dayDiv.className = "day";
+      dayDiv.textContent = day;
 
-          const markers = document.createElement("div");
-          markers.className = "markers";
+      if (isCurrentYearToday && month === todayMonth && day === todayDay) {
+        dayDiv.classList.add("today");
+      }
 
-          goals.forEach(g => {
-            if (g.dates.includes(dateStr)) {
-              const m = document.createElement("div");
-              m.className = "marker";
-              m.style.background = getColor(g);
-              markers.appendChild(m);
-            }
-          });
+      const markers = document.createElement("div");
+      markers.className = "markers";
 
-          dayDiv.appendChild(markers);
-
-
-          dayDiv.onclick = () => toggleDay(dateStr);
-          calendar.appendChild(dayDiv);
+      goals.forEach(g => {
+        if ((g.dates || []).includes(dateStr)) {
+          const m = document.createElement("div");
+          m.className = "marker";
+          m.style.background = getColor(g);
+          markers.appendChild(m);
         }
+      });
+
+      dayDiv.appendChild(markers);
+      dayDiv.onclick = () => toggleDay(dateStr);
+      calendar.appendChild(dayDiv);
+    }
 
     monthDiv.appendChild(calendar);
     container.appendChild(monthDiv);
   }
 
-  // Scroll automático al mes actual (solo si estamos en el año actual)
+  // Autoscroll SOLO una vez por año actual
   if (currentYear === today.getFullYear() && didAutoScrollThisYear !== currentYear) {
-  const currentMonth = today.getMonth();
-  const targetMonth = container.querySelector(`.month-container[data-month="${currentMonth}"]`);
-
-  if (targetMonth) {
-    targetMonth.scrollIntoView({ behavior: "smooth", block: "start" });
-    didAutoScrollThisYear = currentYear; // ✅ solo una vez
+    const targetMonth = container.querySelector(`.month-container[data-month="${today.getMonth()}"]`);
+    if (targetMonth) {
+      targetMonth.scrollIntoView({ behavior: "smooth", block: "start" });
+      didAutoScrollThisYear = currentYear;
+    }
   }
 }
 
-}
-
-/* ---------- SELECCIÓN DE OBJETIVOS ---------- */
+/* ---------- Modal día: marcar objetivos + hh:mm ---------- */
 function toggleDay(dateStr) {
-  if (goals.length===0) return;
+  if (goals.length === 0) return;
 
   const modal = document.createElement("div");
   modal.style = `
-    position:fixed;top:0;left:0;width:100%;height:100%;
-    background:rgba(0,0,0,0.5);display:flex;justify-content:center;align-items:center;z-index:1000;
+    position:fixed; inset:0;
+    background:rgba(0,0,0,0.5);
+    display:flex; justify-content:center; align-items:center;
+    z-index:4000; padding:16px;
   `;
-  const container = document.createElement("div");
-  container.style = `
-    background:white;padding:20px;border-radius:8px;max-height:80%;overflow-y:auto;
+
+  const box = document.createElement("div");
+  box.style = `
+    background:white; padding:16px; border-radius:16px;
+    width:min(520px, 92vw);
+    max-height:80vh; overflow-y:auto;
   `;
-  container.innerHTML = `<h3>Marcar objetivos para ${dateStr}</h3>`;
+
+  box.innerHTML = `<h3>Marcar objetivos para ${dateStr}</h3>`;
 
   goals.forEach(g => {
     const row = document.createElement("div");
     row.style.display = "grid";
-    row.style.gridTemplateColumns = "auto auto 1fr auto"; // ✅ la última columna es el timeWrap (un solo bloque)
+    row.style.gridTemplateColumns = "auto auto 1fr auto";
     row.style.alignItems = "center";
     row.style.gap = "10px";
     row.style.marginBottom = "10px";
-
-    // Evita que el texto empuje al tiempo a otra línea
-    const title = document.createElement("span");
-    title.textContent = g.title;
-    title.style.minWidth = "0";
-    title.style.overflow = "hidden";
-    title.style.textOverflow = "ellipsis";
-    title.style.whiteSpace = "nowrap";
-
 
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
@@ -263,15 +307,19 @@ function toggleDay(dateStr) {
       background:${getColor(g)};
     `;
 
-   // --- valores actuales ---
+    const title = document.createElement("span");
+    title.textContent = g.title;
+    title.style.minWidth = "0";
+    title.style.overflow = "hidden";
+    title.style.textOverflow = "ellipsis";
+    title.style.whiteSpace = "nowrap";
+
     const totalMin = (g.minutesByDate && g.minutesByDate[dateStr] != null) ? g.minutesByDate[dateStr] : null;
     const hm = totalMin == null ? { h: "", m: "" } : minutesToHM(totalMin);
 
-    // contenedor conjunto hh:mm
     const timeWrap = document.createElement("div");
     timeWrap.className = "time-input";
 
-    // input horas
     const hoursInput = document.createElement("input");
     hoursInput.type = "number";
     hoursInput.min = "0";
@@ -279,12 +327,10 @@ function toggleDay(dateStr) {
     hoursInput.placeholder = "h";
     hoursInput.value = hm.h === "" ? "" : String(hm.h);
 
-    // separador :
     const sep = document.createElement("span");
     sep.className = "time-sep";
     sep.textContent = ":";
 
-    // input minutos
     const minutesInput = document.createElement("input");
     minutesInput.type = "number";
     minutesInput.min = "0";
@@ -293,7 +339,6 @@ function toggleDay(dateStr) {
     minutesInput.placeholder = "min";
     minutesInput.value = hm.m === "" ? "" : String(hm.m);
 
-    // habilitar/deshabilitar según checkbox
     const setEnabled = (enabled) => {
       hoursInput.disabled = !enabled;
       minutesInput.disabled = !enabled;
@@ -302,7 +347,6 @@ function toggleDay(dateStr) {
 
     setEnabled(checkbox.checked);
 
-    // normalizar minutos a 0..59 y guardar
     const persistTime = () => {
       if (!checkbox.checked) return;
 
@@ -318,17 +362,11 @@ function toggleDay(dateStr) {
         minutesInput.value = String(m);
       }
 
-      // si el usuario escribe 7, que quede "07" visualmente (opcional)
-      // minutesInput.value = String(m).padStart(2, "0");
-
       if (!g.minutesByDate) g.minutesByDate = {};
       const total = hmToMinutes(h, m);
 
-      if (total === 0) {
-        delete g.minutesByDate[dateStr];
-      } else {
-        g.minutesByDate[dateStr] = total;
-      }
+      if (total === 0) delete g.minutesByDate[dateStr];
+      else g.minutesByDate[dateStr] = total;
 
       save();
     };
@@ -336,105 +374,49 @@ function toggleDay(dateStr) {
     hoursInput.oninput = persistTime;
     minutesInput.oninput = persistTime;
 
-    // montar el conjunto
+    checkbox.onchange = () => {
+      if (checkbox.checked) {
+        if (!g.dates.includes(dateStr)) g.dates.push(dateStr);
+        setEnabled(true);
+        hoursInput.focus();
+      } else {
+        g.dates = g.dates.filter(d => d !== dateStr);
+        if (g.minutesByDate) delete g.minutesByDate[dateStr];
+        hoursInput.value = "";
+        minutesInput.value = "";
+        setEnabled(false);
+      }
+
+      save();
+      renderYearCalendar(); // ✅ no repintar todo, evita saltos
+      renderGoalSummary();  // resumen sí se actualiza
+    };
+
     timeWrap.appendChild(hoursInput);
     timeWrap.appendChild(sep);
     timeWrap.appendChild(minutesInput);
-
-
-    // Toggle del objetivo para ese día
-    checkbox.onchange = () => {
-      const idx = (g.dates || []).indexOf(dateStr);
-
-      if (checkbox.checked) {
-        setEnabled(true);
-
-        // Si no hay tiempo aún, deja vacío (o pon 0:00)
-        if (!g.minutesByDate) g.minutesByDate = {};
-        if (g.minutesByDate[dateStr] == null) {
-          // no asignamos nada por defecto -> queda vacío
-        }
-
-        hoursInput.focus();
-      } else {
-        setEnabled(false);
-        hoursInput.value = "";
-        minutesInput.value = "";
-
-        if (g.minutesByDate) delete g.minutesByDate[dateStr];
-      }
-
-
-
-      save();
-      renderDashboard(); // o renderYearCalendar() si prefieres evitar repintar todo
-    };
 
     row.appendChild(checkbox);
     row.appendChild(colorDot);
     row.appendChild(title);
     row.appendChild(timeWrap);
 
-
-
-    container.appendChild(row);
+    box.appendChild(row);
   });
 
   const closeBtn = document.createElement("button");
-  closeBtn.textContent="Cerrar";
-  closeBtn.style.marginTop="10px";
+  closeBtn.textContent = "Cerrar";
+  closeBtn.style.marginTop = "10px";
   closeBtn.onclick = () => document.body.removeChild(modal);
 
-  container.appendChild(closeBtn);
-  modal.appendChild(container);
+  box.appendChild(closeBtn);
+  modal.appendChild(box);
   document.body.appendChild(modal);
+
+  modal.onclick = (e) => { if (e.target === modal) document.body.removeChild(modal); };
 }
 
-function minutesToHM(total) {
-  const t = Number(total);
-  if (!Number.isFinite(t) || t < 0) return { h: 0, m: 0 };
-  const h = Math.floor(t / 60);
-  const m = t % 60;
-  return { h, m };
-}
-
-function hmToMinutes(h, m) {
-  const hh = Number(h);
-  const mm = Number(m);
-  if (!Number.isFinite(hh) || hh < 0) return 0;
-  if (!Number.isFinite(mm) || mm < 0) return 0;
-  return Math.round(hh * 60 + mm);
-}
-
-/* ------------ SIDEBAR ------------*/
-function toggleSidebar() {
-  const sidebar = document.getElementById("sidebar");
-  const overlay = document.getElementById("overlay");
-  const isOpen = sidebar.classList.toggle("open");
-  overlay.classList.toggle("hidden", !isOpen);
-}
-
-function formatMinutes(mins) {
-  const t = Number(mins) || 0;
-  const h = Math.floor(t / 60);
-  const m = t % 60;
-  if (h <= 0) return `${m} min`;
-  if (m === 0) return `${h} h`;
-  return `${h} h ${m} min`;
-}
-
-function sumMinutesForYear(goal, year) {
-  const map = goal.minutesByDate || {};
-  let total = 0;
-  for (const [dateStr, mins] of Object.entries(map)) {
-    if (String(dateStr).startsWith(String(year))) {
-      const v = Number(mins);
-      if (Number.isFinite(v) && v > 0) total += v;
-    }
-  }
-  return total;
-}
-
+/* ---------- Info objetivo + eliminar dentro ---------- */
 function showGoalInfo(goal) {
   const days = (goal.dates || []).filter(d => String(d).startsWith(String(currentYear))).length;
   const totalMinutes = sumMinutesForYear(goal, currentYear);
@@ -466,11 +448,8 @@ function showGoalInfo(goal) {
       <div><strong>Media por día:</strong> ${formatMinutes(avg)}</div>
     </div>
 
-    <div style="margin-top:16px;display:flex;gap:10px;justify-content:flex-end;">
-      <button id="delete-goal"
-        style="
-          color:#FF3B30; background:transparent; border:0;
-        ">
+    <div style="margin-top:16px;display:flex;justify-content:flex-end;">
+      <button id="delete-goal" style="color:#FF3B30; background:transparent; border:0; font-weight:700;">
         Eliminar objetivo
       </button>
     </div>
@@ -480,11 +459,9 @@ function showGoalInfo(goal) {
   document.body.appendChild(modal);
 
   const close = () => document.body.removeChild(modal);
-
   card.querySelector("#close-info").onclick = close;
   modal.onclick = (e) => { if (e.target === modal) close(); };
 
-  // eliminar dentro del panel info
   card.querySelector("#delete-goal").onclick = () => {
     if (confirm(`¿Eliminar el objetivo "${goal.title}"?`)) {
       goals = goals.filter(g => g.id !== goal.id);
@@ -495,14 +472,12 @@ function showGoalInfo(goal) {
   };
 }
 
-
-/* ------------ DESGLOSE -------------*/
+/* ---------- Desglose (todos los objetivos) ---------- */
 function renderBreakdownAll() {
   const container = document.getElementById("breakdown-list");
   if (!container) return;
 
   container.innerHTML = "";
-
   if (goals.length === 0) {
     container.textContent = "No hay objetivos. Crea uno primero desde el menú.";
     return;
@@ -512,18 +487,11 @@ function renderBreakdownAll() {
     const card = document.createElement("div");
     card.className = "breakdown-goal";
 
-    // Header
-    const header = document.createElement("div");
-    header.className = "breakdown-goal-header";
-
     const title = document.createElement("div");
     title.className = "breakdown-goal-title";
     title.textContent = goal.title;
+    card.appendChild(title);
 
-    header.appendChild(title);
-    card.appendChild(header);
-
-    // Add milestone row
     const addRow = document.createElement("div");
     addRow.className = "breakdown-add";
 
@@ -547,7 +515,6 @@ function renderBreakdownAll() {
     addRow.appendChild(btn);
     card.appendChild(addRow);
 
-    // Milestone list
     const ul = document.createElement("ul");
     ul.className = "milestone-list";
 
@@ -600,7 +567,6 @@ function renderBreakdownAll() {
       li.appendChild(checkbox);
       li.appendChild(mTitle);
       li.appendChild(actions);
-
       ul.appendChild(li);
     });
 
@@ -609,20 +575,58 @@ function renderBreakdownAll() {
   });
 }
 
+/* ---------- Export / Import ---------- */
+function exportData() {
+  const payload = { version: 1, exportedAt: new Date().toISOString(), goals };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
 
-/* ---------- NAVEGACIÓN DE AÑOS ---------- */
-function prevYear() { 
-  currentYear--; 
-  didAutoScrollThisYear = null;
-  renderDashboard(); 
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "objectives-backup.json";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+
+  URL.revokeObjectURL(url);
 }
 
-function nextYear() { 
-  currentYear++; 
-  didAutoScrollThisYear = null;
-  renderDashboard(); 
+function importData(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      if (!data || !Array.isArray(data.goals)) {
+        alert("Archivo inválido.");
+        return;
+      }
+      goals = data.goals;
+      save();
+      renderDashboard();
+      alert("Datos importados correctamente ✅");
+    } catch {
+      alert("No se pudo importar el archivo.");
+    }
+  };
+
+  reader.readAsText(file);
+  event.target.value = "";
 }
 
+/* ---------- Navegación años ---------- */
+function prevYear() {
+  currentYear--;
+  didAutoScrollThisYear = null;
+  renderDashboard();
+}
+function nextYear() {
+  currentYear++;
+  didAutoScrollThisYear = null;
+  renderDashboard();
+}
 
 /* ---------- INIT ---------- */
 renderDashboard();

@@ -1,30 +1,31 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Objetivos</title>
 
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#4caf50">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#4caf50" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css" />
 </head>
+
 <body>
+  <h1>App Objetivos</h1>
 
-    <h1>App Objetivos</h1>
+  <nav class="tabs">
+    <button class="tab active" data-tab="calendar" onclick="switchTab('calendar')">📅 Calendario</button>
+    <button class="tab" data-tab="breakdown" onclick="switchTab('breakdown')">🧩 Desglose</button>
+  </nav>
 
-    <nav class="tabs">
-      <button class="tab active" onclick="switchTab('calendar')">📅 Calendario</button>
-      <button class="tab" onclick="switchTab('breakdown')">🧩 Desglose</button>
-    </nav>
+  <button id="menu-btn" aria-label="Menú" onclick="toggleSidebar()">☰</button>
 
-
-    <button id="menu-btn" aria-label="Menu" onclick="toggleSidebar()">☰</button>
-
-    <div id="sidebar" class="sidebar">
+  <div id="sidebar" class="sidebar">
+    <!-- Vista principal -->
+    <div id="sidebar-main" class="sidebar-view">
       <div class="sidebar-header">
         <h2>🎯 Objetivos</h2>
         <button class="close-btn" onclick="toggleSidebar()">✕</button>
@@ -36,31 +37,53 @@
       <h3>Agregar nuevo</h3>
       <div class="sidebar-add">
         <input id="new-goal-title" placeholder="Nuevo objetivo…" />
-        <input type="color" id="new-goal-color" value="#4caf50">
+        <input id="new-goal-color" type="color" value="#4caf50" />
         <button onclick="addGoal()">Añadir</button>
+      </div>
+
+      <div class="sidebar-bottom">
+        <button class="settings-btn" onclick="openSettings()">⚙ Ajustes</button>
       </div>
     </div>
 
-    <div id="overlay" class="overlay hidden" onclick="toggleSidebar()"></div>
-
-    <section id="tab-calendar" class="tab-content active">
-      <div id="year-selector">
-        <button onclick="prevYear()">◀</button>
-        <span id="year-label"></span>
-        <button onclick="nextYear()">▶</button>
+    <!-- Vista ajustes -->
+    <div id="sidebar-settings" class="sidebar-view hidden">
+      <div class="sidebar-header">
+        <button class="close-btn" onclick="closeSettings()">←</button>
+        <h2>Ajustes</h2>
+        <button class="close-btn" onclick="toggleSidebar()">✕</button>
       </div>
 
-      <div id="calendar-year"></div>
-    </section>
+      <h3>Backup</h3>
+      <button onclick="exportData()">Exportar datos</button>
+      <button onclick="document.getElementById('import-file').click()">Importar datos</button>
+      <input
+        id="import-file"
+        type="file"
+        accept="application/json"
+        style="display:none"
+        onchange="importData(event)"
+      />
+    </div>
+  </div>
 
+  <div id="overlay" class="overlay hidden" onclick="toggleSidebar()"></div>
 
-    <hr />
+  <section id="tab-calendar" class="tab-content active">
+    <div id="year-selector">
+      <button onclick="prevYear()">◀</button>
+      <span id="year-label"></span>
+      <button onclick="nextYear()">▶</button>
+    </div>
 
-    <section id="tab-breakdown" class="tab-content">
-      <h2>🧩 Desglose de objetivos</h2>
-      <div id="breakdown-list"></div>
-    </section>
-    
+    <div id="calendar-year"></div>
+  </section>
+
+  <section id="tab-breakdown" class="tab-content">
+    <h2>🧩 Desglose de objetivos</h2>
+    <div id="breakdown-list"></div>
+  </section>
+
   <script src="app.js"></script>
 </body>
 </html>
