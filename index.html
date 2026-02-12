@@ -42,7 +42,7 @@
       </div>
 
       <div class="sidebar-bottom">
-        <button class="settings-btn" onclick="openSettings()">⚙ Ajustes</button>
+        <button class="settings-btn" onclick="openSettingsScreen()">⚙ Ajustes</button>
       </div>
     </div>
 
@@ -83,6 +83,29 @@
     <h2>🧩 Desglose de objetivos</h2>
     <div id="breakdown-list"></div>
   </section>
+
+  <!-- Pantalla completa de Ajustes -->
+  <div id="settings-screen" class="settings-screen hidden">
+    <div class="settings-topbar">
+      <button class="close-btn" onclick="closeSettingsScreen()">←</button>
+      <div class="settings-title">Ajustes</div>
+      <button class="close-btn" onclick="closeSettingsScreen()">✕</button>
+    </div>
+
+    <div class="settings-content">
+      <h3>Backup</h3>
+      <button onclick="exportData()">Exportar datos</button>
+      <button onclick="document.getElementById('import-file').click()">Importar datos</button>
+      <input
+        id="import-file"
+        type="file"
+        accept="application/json"
+        style="display:none"
+        onchange="importData(event)"
+      />
+    </div>
+  </div>
+
 
   <script src="app.js"></script>
 </body>

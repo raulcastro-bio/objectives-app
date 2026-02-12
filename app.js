@@ -108,18 +108,6 @@ function toggleSidebar() {
   if (!isOpen) showMainSidebarView();
 }
 
-function openSettings() {
-  const main = document.getElementById("sidebar-main");
-  const settings = document.getElementById("sidebar-settings");
-  if (!main || !settings) return;
-  main.classList.add("hidden");
-  settings.classList.remove("hidden");
-}
-
-function closeSettings() {
-  showMainSidebarView();
-}
-
 /* ---------- Objetivos ---------- */
 function addGoal() {
   const titleInput = document.getElementById("new-goal-title");
@@ -574,6 +562,24 @@ function renderBreakdownAll() {
     container.appendChild(card);
   });
 }
+
+/* ---------- Ajustes ------------ */
+function openSettingsScreen() {
+  // Cierra sidebar si está abierto (para que no quede detrás)
+  const sidebar = document.getElementById("sidebar");
+  const overlay = document.getElementById("overlay");
+  if (sidebar && sidebar.classList.contains("open")) {
+    sidebar.classList.remove("open");
+    if (overlay) overlay.classList.add("hidden");
+  }
+
+  document.getElementById("settings-screen").classList.remove("hidden");
+}
+
+function closeSettingsScreen() {
+  document.getElementById("settings-screen").classList.add("hidden");
+}
+
 
 /* ---------- Export / Import ---------- */
 function exportData() {

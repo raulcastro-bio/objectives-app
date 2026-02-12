@@ -191,6 +191,48 @@ input {
   font-weight: 600;
 }
 
+/* Settings */
+.settings-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 6000;              /* por encima del sidebar */
+  background: var(--bg, #f6f7fb);
+  display: flex;
+  flex-direction: column;
+}
+
+.settings-topbar {
+  height: 56px;
+  padding: 10px 12px;
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(17,24,39,0.10);
+
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.settings-title {
+  text-align: center;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.settings-content {
+  padding: 16px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: grid;
+  gap: 10px;
+}
+
+.settings-content button {
+  width: 100%;
+}
+
+
 /* Tabs */
 .tabs {
   display: inline-flex;
