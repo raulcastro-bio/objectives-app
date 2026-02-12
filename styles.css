@@ -72,6 +72,12 @@ input {
   min-height: 40px;
 }
 
+input,
+select,
+textarea {
+  font-size: 16px;
+}
+
 /* Color picker look */
 .goal-color-picker, input[type="color"] {
   width: 38px;
@@ -383,7 +389,6 @@ input {
 }
 
 .breakdown-add {
-  display: flex;
   gap: 10px;
   margin: 10px 0;
 }
