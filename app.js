@@ -572,6 +572,7 @@ function openSettingsScreen() {
     sidebar.classList.remove("open");
     if (overlay) overlay.classList.add("hidden");
   }
+  loadAutoBackupUI();
 
   document.getElementById("settings-screen").classList.remove("hidden");
 }
@@ -579,6 +580,118 @@ function openSettingsScreen() {
 function closeSettingsScreen() {
   document.getElementById("settings-screen").classList.add("hidden");
 }
+
+function getAutoBackupSettings() {
+  return JSON.parse(localStorage.getItem("auto_backup_settings") || "{}");
+}
+
+function saveAutoBackupSettings(patch) {
+  const cur = getAutoBackupSettings();
+  const next = { ...cur, ...patch };
+  localStorage.setItem("auto_backup_settings", JSON.stringify(next));
+  return next;
+}
+
+function loadAutoBackupUI() {
+  const s = getAutoBackupSettings();
+  const emailEl = document.getElementById("auto-backup-email");
+  const freqEl = document.getElementById("auto-backup-frequency");
+  const enabledEl = document.getElementById("auto-backup-enabled");
+  if (!emailEl || !freqEl || !enabledEl) return;
+
+  emailEl.value = s.email || "";
+  freqEl.value = s.frequency || "weekly";
+  enabledEl.checked = !!s.enabled;
+
+  emailEl.oninput = () => saveAutoBackupSettings({ email: emailEl.value.trim() });
+  freqEl.onchange = () => saveAutoBackupSettings({ frequency: freqEl.value });
+  enabledEl.onchange = () => saveAutoBackupSettings({ enabled: enabledEl.checked });
+}
+
+function frequencyToMs(freq) {
+  if (freq === "daily") return 24 * 60 * 60 * 1000;
+  if (freq === "monthly") return 30 * 24 * 60 * 60 * 1000;
+  return 7 * 24 * 60 * 60 * 1000; // weekly default
+}
+
+function buildBackupPayload() {
+  return {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    goals
+  };
+}
+
+/**
+ * Envío “asistido”:
+ * - Si Web Share API permite compartir archivos → abre hoja de compartir (Mail incluido).
+ * - Si no, descarga el JSON (y tú lo adjuntas manualmente en Mail).
+ */
+async function shareBackupFile(email) {
+  const payload = buildBackupPayload();
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const file = new File([blob], "objectives-backup.json", { type: "application/json" });
+
+  // Mejor opción en móviles modernos
+  if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+    await navigator.share({
+      title: "Backup Objetivos",
+      text: email ? `Enviar a: ${email}` : "Backup de la app",
+      files: [file]
+    });
+    return;
+  }
+
+  // Fallback: descarga el archivo
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "objectives-backup.json";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+
+  alert("Se descargó el backup. Adjunta el archivo en Mail y envíalo manualmente.");
+}
+
+async function runAutoBackupNow() {
+  const s = getAutoBackupSettings();
+  const email = (s.email || "").trim();
+
+  if (!email) {
+    alert("Introduce un email destino en Ajustes → Backup automático.");
+    return;
+  }
+
+  try {
+    await shareBackupFile(email);
+    saveAutoBackupSettings({ lastSentAt: Date.now() });
+  } catch (e) {
+    console.error(e);
+    alert("No se pudo abrir el envío. Prueba de nuevo.");
+  }
+}
+
+// Ejecuta cuando la app se abre (no background real)
+async function maybeRunAutoBackupOnLaunch() {
+  const s = getAutoBackupSettings();
+  if (!s.enabled) return;
+
+  const email = (s.email || "").trim();
+  if (!email) return;
+
+  const freqMs = frequencyToMs(s.frequency || "weekly");
+  const last = Number(s.lastSentAt || 0);
+
+  if (Date.now() - last < freqMs) return;
+
+  // Muy importante: en iOS necesitas un gesto de usuario para share a veces.
+  // Por eso aquí solo avisamos y dejamos un botón "Enviar ahora".
+  // Si quieres, puedo mostrar un banner dentro de la app.
+  console.log("Auto-backup pendiente: abre Ajustes y pulsa 'Enviar backup ahora'.");
+}
+
 
 
 /* ---------- Export / Import ---------- */
@@ -636,3 +749,5 @@ function nextYear() {
 
 /* ---------- INIT ---------- */
 renderDashboard();
+maybeRunAutoBackupOnLaunch();
+

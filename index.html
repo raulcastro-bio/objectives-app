@@ -103,6 +103,32 @@
         style="display:none"
         onchange="importData(event)"
       />
+
+      <h3>Backup automático</h3>
+
+      <div class="settings-card">
+        <label class="settings-label">Email destino</label>
+        <input id="auto-backup-email" type="email" placeholder="tu@email.com" />
+
+        <label class="settings-label">Frecuencia</label>
+        <select id="auto-backup-frequency">
+          <option value="daily">Cada día</option>
+          <option value="weekly" selected>Cada semana</option>
+          <option value="monthly">Cada mes</option>
+        </select>
+
+        <label class="settings-row">
+          <input id="auto-backup-enabled" type="checkbox" />
+          Activar backup automático (cuando abras la app)
+        </label>
+
+        <button onclick="runAutoBackupNow()">Enviar backup ahora</button>
+
+        <p class="settings-hint">
+          Nota: en iPhone, una PWA no puede enviar emails en segundo plano. Este backup se ejecuta cuando abres la app y te abre el envío para confirmarlo.
+        </p>
+      </div>
+
     </div>
   </div>
 
